@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { deleteClient, deleteJob } from '@/app/actions'
+import FileUpload from '@/components/FileUpload'
+import FileList from '@/components/FileList'
 
 const statusColors: Record<string, string> = {
   lead: 'bg-yellow-100 text-yellow-800',
@@ -29,6 +31,15 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     .eq('client_id', id)
     .order('created_at', { ascending: false })
 
+  const { data: allFiles } = await supabase
+    .from('files')
+    .select('*')
+    .eq('client_id', id)
+    .order('created_at', { ascending: false })
+
+  const clientFiles = allFiles?.filter((f) => !f.job_id) ?? []
+  const filesByJob = (jobId: string) => allFiles?.filter((f) => f.job_id === jobId) ?? []
+
   const deleteClientWithId = deleteClient.bind(null, id)
 
   return (
@@ -51,13 +62,18 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
               Edit
             </Link>
             <form action={deleteClientWithId}>
-              <button
-                type="submit"
-                className="text-sm border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50"
-              >
+              <button type="submit" className="text-sm border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50">
                 Delete
               </button>
             </form>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Client Documents</p>
+          <FileList files={clientFiles} />
+          <div className="mt-2">
+            <FileUpload clientId={id} />
           </div>
         </div>
       </div>
@@ -105,6 +121,12 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                         Delete
                       </button>
                     </form>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <FileList files={filesByJob(job.id)} />
+                  <div className="mt-2">
+                    <FileUpload clientId={id} jobId={job.id} />
                   </div>
                 </div>
               </div>
