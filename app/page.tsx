@@ -34,7 +34,7 @@ export default async function Dashboard({
     .order('created_at', { ascending: false })
 
   if (search) {
-    query = query.ilike('name', `%${search}%`)
+    query = query.or(`name.ilike.%${search}%,address.ilike.%${search}%`)
   }
 
   const { data: clients } = await query
