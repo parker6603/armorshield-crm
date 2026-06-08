@@ -40,6 +40,10 @@ export default function JobForm({ job, clientId }: { job: Job; clientId: string 
           <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
           <textarea name="notes" rows={2} defaultValue={job.notes ?? ''} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-500" />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">📁 Google Drive Photos Link</label>
+          <input name="photo_link" type="url" defaultValue={job.photo_link ?? ''} placeholder="https://drive.google.com/..." className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-500" />
+        </div>
         <button type="submit" className="w-full bg-slate-800 text-white py-2 rounded-lg hover:bg-slate-700 font-medium">
           Save Changes
         </button>

@@ -48,6 +48,7 @@ export async function createJob(clientId: string, formData: FormData) {
     description: (formData.get('description') as string) || null,
     estimate: formData.get('estimate') ? Number(formData.get('estimate')) : null,
     notes: (formData.get('notes') as string) || null,
+    photo_link: (formData.get('photo_link') as string) || null,
   })
   if (error) throw new Error(error.message)
   revalidatePath(`/clients/${clientId}`)
@@ -61,6 +62,7 @@ export async function updateJob(jobId: string, clientId: string, formData: FormD
     description: (formData.get('description') as string) || null,
     estimate: formData.get('estimate') ? Number(formData.get('estimate')) : null,
     notes: (formData.get('notes') as string) || null,
+    photo_link: (formData.get('photo_link') as string) || null,
   }).eq('id', jobId)
   if (error) throw new Error(error.message)
   revalidatePath(`/clients/${clientId}`)

@@ -111,6 +111,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                     )}
                     {job.description && <p className="text-gray-500 text-sm mt-1">{job.description}</p>}
                     {job.notes && <p className="text-gray-400 text-sm mt-1 italic">{job.notes}</p>}
+                    {job.photo_link && (
+                      <a href={job.photo_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm mt-1">
+                        📁 View Photos
+                      </a>
+                    )}
                   </div>
                   <div className="flex gap-2 ml-4">
                     <Link href={`/clients/${id}/jobs/${job.id}/edit`} className="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">

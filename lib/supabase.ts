@@ -24,5 +24,6 @@ export type Job = {
   description: string | null
   estimate: number | null
   notes: string | null
+  photo_link: string | null
   created_at: string
 }
