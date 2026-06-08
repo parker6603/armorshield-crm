@@ -11,6 +11,7 @@ export async function createClient(formData: FormData) {
     phone: (formData.get('phone') as string) || null,
     address: (formData.get('address') as string) || null,
     notes: (formData.get('notes') as string) || null,
+    follow_up_date: (formData.get('follow_up_date') as string) || null,
   })
   if (error) throw new Error(error.message)
   revalidatePath('/')
@@ -24,6 +25,7 @@ export async function updateClient(id: string, formData: FormData) {
     phone: (formData.get('phone') as string) || null,
     address: (formData.get('address') as string) || null,
     notes: (formData.get('notes') as string) || null,
+    follow_up_date: (formData.get('follow_up_date') as string) || null,
   }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath(`/clients/${id}`)

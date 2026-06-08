@@ -12,6 +12,7 @@ export type Client = {
   phone: string | null
   address: string | null
   notes: string | null
+  follow_up_date: string | null
   created_at: string
 }
 

@@ -29,6 +29,10 @@ export default function NewClientPage() {
           <input name="address" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-500" />
         </div>
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
+          <input name="follow_up_date" type="date" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-500" />
+        </div>
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
           <textarea name="notes" rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-500" />
         </div>
