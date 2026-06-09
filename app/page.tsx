@@ -3,6 +3,8 @@ import { Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import SearchBar from '@/components/SearchBar'
 import StatusFilter from '@/components/StatusFilter'
+import SortControl from '@/components/SortControl'
+import DashboardGreeting from '@/components/DashboardGreeting'
 import { snoozeFollowUp, clearFollowUp } from './actions'
 
 type JobStat = { id: string; status: string; estimate: number | null }
@@ -15,6 +17,12 @@ function isOverdue(date: string | null) {
 function isDueToday(date: string | null) {
   if (!date) return false
   return date === new Date().toISOString().split('T')[0]
+}
+
+function isNewClient(created_at: string) {
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  return new Date(created_at) > sevenDaysAgo
 }
 
 const statusColors: Record<string, string> = {
@@ -34,9 +42,9 @@ const statusLabels: Record<string, string> = {
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string }>
+  searchParams: Promise<{ search?: string; status?: string; sort?: string }>
 }) {
-  const { search, status } = await searchParams
+  const { search, status, sort = 'newest' } = await searchParams
 
   const { data: allClients } = await supabase
     .from('clients')
@@ -48,6 +56,7 @@ export default async function Dashboard({
   const stats = {
     clients: allClients?.length ?? 0,
     active: allJobs.filter(j => j.status === 'in_progress').length,
+    leads: allJobs.filter(j => j.status === 'lead').length,
     pipeline: allJobs
       .filter(j => j.status !== 'complete')
       .reduce((s, j) => s + (j.estimate ?? 0), 0),
@@ -60,6 +69,7 @@ export default async function Dashboard({
     c => isOverdue(c.follow_up_date) || isDueToday(c.follow_up_date)
   )
 
+  // Filter
   let clients = allClients ?? []
   if (search) {
     const q = search.toLowerCase()
@@ -71,8 +81,26 @@ export default async function Dashboard({
   }
   if (status) {
     clients = clients.filter(c =>
-      (c.jobs as JobStat[] ?? []).some(j => j.status === status)
+      (c.jobs as JobStat[]).some(j => j.status === status)
     )
+  }
+
+  // Sort
+  if (sort === 'name') {
+    clients = [...clients].sort((a, b) => a.name.localeCompare(b.name))
+  } else if (sort === 'value') {
+    clients = [...clients].sort((a, b) => {
+      const aVal = (a.jobs as JobStat[]).reduce((s, j) => s + (j.estimate ?? 0), 0)
+      const bVal = (b.jobs as JobStat[]).reduce((s, j) => s + (j.estimate ?? 0), 0)
+      return bVal - aVal
+    })
+  } else if (sort === 'followup') {
+    clients = [...clients].sort((a, b) => {
+      if (!a.follow_up_date && !b.follow_up_date) return 0
+      if (!a.follow_up_date) return 1
+      if (!b.follow_up_date) return -1
+      return a.follow_up_date.localeCompare(b.follow_up_date)
+    })
   }
 
   const pipelineDisplay = stats.pipeline >= 10000
@@ -81,6 +109,14 @@ export default async function Dashboard({
 
   return (
     <div className="space-y-5">
+
+      {/* Greeting */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <Suspense>
+          <DashboardGreeting />
+        </Suspense>
+      </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -130,18 +166,12 @@ export default async function Dashboard({
                     {isDueToday(c.follow_up_date) ? 'Today' : 'Overdue'}
                   </span>
                   <form action={snoozeAction} className="flex-shrink-0">
-                    <button
-                      type="submit"
-                      className="text-xs text-gray-600 border border-gray-200 bg-white px-2.5 py-1 rounded-lg hover:bg-gray-50 active:bg-gray-100"
-                    >
+                    <button type="submit" className="text-xs text-gray-600 border border-gray-200 bg-white px-2.5 py-1 rounded-lg hover:bg-gray-50">
                       Snooze 1 wk
                     </button>
                   </form>
                   <form action={clearAction} className="flex-shrink-0">
-                    <button
-                      type="submit"
-                      className="text-xs text-green-700 border border-green-300 bg-white px-2.5 py-1 rounded-lg hover:bg-green-50 font-semibold active:bg-green-100"
-                    >
+                    <button type="submit" className="text-xs text-green-700 border border-green-300 bg-white px-2.5 py-1 rounded-lg hover:bg-green-50 font-semibold">
                       ✓ Done
                     </button>
                   </form>
@@ -160,6 +190,9 @@ export default async function Dashboard({
               <SearchBar />
             </Suspense>
           </div>
+          <Suspense>
+            <SortControl />
+          </Suspense>
           <Link
             href="/clients/new"
             className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 font-medium text-sm flex-shrink-0 hidden sm:inline-flex items-center"
@@ -172,15 +205,12 @@ export default async function Dashboard({
         </Suspense>
       </div>
 
-      {/* Results count + mobile add button */}
+      {/* Results count + mobile add */}
       <div className="flex items-center justify-between -mt-1">
         <p className="text-sm text-gray-400">
           {clients.length} client{clients.length !== 1 ? 's' : ''}{search || status ? ' found' : ''}
         </p>
-        <Link
-          href="/clients/new"
-          className="sm:hidden bg-slate-800 text-white px-4 py-2 rounded-lg font-medium text-sm"
-        >
+        <Link href="/clients/new" className="sm:hidden bg-slate-800 text-white px-4 py-2 rounded-lg font-medium text-sm">
           + Add Client
         </Link>
       </div>
@@ -200,6 +230,7 @@ export default async function Dashboard({
             const total = jobs.reduce((s, j) => s + (j.estimate ?? 0), 0)
             const overdue = isOverdue(client.follow_up_date)
             const today = isDueToday(client.follow_up_date)
+            const brandNew = isNewClient(client.created_at)
 
             const counts: Record<string, number> = {}
             jobs.forEach(j => { counts[j.status] = (counts[j.status] ?? 0) + 1 })
@@ -222,31 +253,24 @@ export default async function Dashboard({
                       <span className="font-semibold text-gray-900 group-hover:text-slate-700">
                         {client.name}
                       </span>
+                      {brandNew && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">New</span>
+                      )}
                       {overdue && (
-                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                          ⚠️ Follow up
-                        </span>
+                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">⚠️ Follow up</span>
                       )}
                       {!overdue && today && (
-                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                          📅 Today
-                        </span>
+                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">📅 Today</span>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
-                      {client.phone && (
-                        <span className="text-gray-500 text-sm">📞 {client.phone}</span>
-                      )}
-                      {client.address && (
-                        <span className="text-gray-400 text-sm truncate max-w-xs">📍 {client.address}</span>
-                      )}
+                      {client.phone && <span className="text-gray-500 text-sm">📞 {client.phone}</span>}
+                      {client.address && <span className="text-gray-400 text-sm truncate max-w-xs">📍 {client.address}</span>}
                     </div>
                     {jobs.length > 0 && (
                       <div className="flex flex-wrap items-center gap-2 mt-2">
                         <span className="text-xs text-gray-400">{jobs.length} job{jobs.length !== 1 ? 's' : ''}</span>
-                        {total > 0 && (
-                          <span className="text-sm font-semibold text-green-700">${total.toLocaleString()}</span>
-                        )}
+                        {total > 0 && <span className="text-sm font-semibold text-green-700">${total.toLocaleString()}</span>}
                         {showStatuses.map(([s, count]) => (
                           <span key={s} className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[s] ?? 'bg-gray-100 text-gray-600'}`}>
                             {count > 1 ? `${count}× ` : ''}{statusLabels[s] ?? s}

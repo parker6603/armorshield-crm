@@ -5,6 +5,7 @@ import { deleteClient, deleteJob } from '@/app/actions'
 import FileUpload from '@/components/FileUpload'
 import FileList from '@/components/FileList'
 import QuickStatusUpdate from '@/components/QuickStatusUpdate'
+import FollowUpQuickSet from '@/components/FollowUpQuickSet'
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,6 +29,17 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const filesByJob = (jobId: string) => allFiles?.filter((f) => f.job_id === jobId) ?? []
 
   const deleteClientWithId = deleteClient.bind(null, id)
+
+  // Stats
+  const totalEstimate = jobs?.reduce((s, j) => s + (j.estimate ?? 0), 0) ?? 0
+  const activeCount = jobs?.filter(j => j.status !== 'complete').length ?? 0
+  const completeCount = jobs?.filter(j => j.status === 'complete').length ?? 0
+
+  // Sort jobs: active first, complete last
+  const statusPriority: Record<string, number> = { in_progress: 0, scheduled: 1, lead: 2, complete: 3 }
+  const sortedJobs = [...(jobs ?? [])].sort(
+    (a, b) => (statusPriority[a.status] ?? 4) - (statusPriority[b.status] ?? 4)
+  )
 
   return (
     <div>
@@ -56,6 +68,9 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
               </p>
             )}
             {client.notes && <p className="text-gray-500 mt-3 text-sm">{client.notes}</p>}
+            <div className="mt-3">
+              <FollowUpQuickSet clientId={id} hasFollowUp={!!client.follow_up_date} />
+            </div>
           </div>
           <div className="flex gap-2">
             <Link href={`/clients/${id}/edit`} className="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
@@ -68,6 +83,33 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
             </form>
           </div>
         </div>
+
+        {(jobs?.length ?? 0) > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100 flex gap-5 flex-wrap">
+            <div>
+              <p className="text-2xl font-bold text-slate-700 tabular-nums">{jobs?.length}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Total Jobs</p>
+            </div>
+            {totalEstimate > 0 && (
+              <div>
+                <p className="text-2xl font-bold text-green-600 tabular-nums">${totalEstimate.toLocaleString()}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Estimated</p>
+              </div>
+            )}
+            {activeCount > 0 && (
+              <div>
+                <p className="text-2xl font-bold text-orange-500 tabular-nums">{activeCount}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Active</p>
+              </div>
+            )}
+            {completeCount > 0 && (
+              <div>
+                <p className="text-2xl font-bold text-green-500 tabular-nums">{completeCount}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Complete</p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Client Documents</p>
@@ -88,13 +130,13 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         </Link>
       </div>
 
-      {!jobs?.length ? (
+      {!sortedJobs.length ? (
         <div className="text-center py-10 text-gray-400 bg-white rounded-xl border border-gray-200">
           No jobs yet. Click <strong>+ Add Job</strong> to add one.
         </div>
       ) : (
         <div className="grid gap-3">
-          {jobs.map((job) => {
+          {sortedJobs.map((job) => {
             const deleteJobWithIds = deleteJob.bind(null, job.id, id)
             return (
               <div key={job.id} className="bg-white rounded-xl border border-gray-200 p-5">
