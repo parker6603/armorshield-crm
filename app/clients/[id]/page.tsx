@@ -39,9 +39,22 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
-            {client.phone && <p className="text-gray-600 mt-1">📞 {client.phone}</p>}
-            {client.email && <p className="text-gray-600">✉️ {client.email}</p>}
+            {client.phone && (
+              <a href={`tel:${client.phone}`} className="text-gray-600 mt-1 block hover:text-blue-600 transition-colors">
+                📞 {client.phone}
+              </a>
+            )}
+            {client.email && (
+              <a href={`mailto:${client.email}`} className="text-gray-600 block hover:text-blue-600 transition-colors">
+                ✉️ {client.email}
+              </a>
+            )}
             {client.address && <p className="text-gray-600">📍 {client.address}</p>}
+            {client.follow_up_date && (
+              <p className="text-amber-600 text-sm mt-1 font-medium">
+                📅 Follow up: {new Date(client.follow_up_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
+            )}
             {client.notes && <p className="text-gray-500 mt-3 text-sm">{client.notes}</p>}
           </div>
           <div className="flex gap-2">

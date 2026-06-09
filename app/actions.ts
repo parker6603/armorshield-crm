@@ -80,4 +80,21 @@ export async function updateJobStatus(jobId: string, clientId: string, status: s
   const { error } = await supabase.from('jobs').update({ status }).eq('id', jobId)
   if (error) throw new Error(error.message)
   revalidatePath(`/clients/${clientId}`)
+  revalidatePath('/jobs')
+  revalidatePath('/')
+}
+
+export async function snoozeFollowUp(clientId: string, days: number) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  const dateStr = d.toISOString().split('T')[0]
+  const { error } = await supabase.from('clients').update({ follow_up_date: dateStr }).eq('id', clientId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/')
+}
+
+export async function clearFollowUp(clientId: string) {
+  const { error } = await supabase.from('clients').update({ follow_up_date: null }).eq('id', clientId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/')
 }
