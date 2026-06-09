@@ -4,20 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { deleteClient, deleteJob } from '@/app/actions'
 import FileUpload from '@/components/FileUpload'
 import FileList from '@/components/FileList'
-
-const statusColors: Record<string, string> = {
-  lead: 'bg-yellow-100 text-yellow-800',
-  scheduled: 'bg-blue-100 text-blue-800',
-  in_progress: 'bg-orange-100 text-orange-800',
-  complete: 'bg-green-100 text-green-800',
-}
-
-const statusLabels: Record<string, string> = {
-  lead: 'Lead',
-  scheduled: 'Scheduled',
-  in_progress: 'In Progress',
-  complete: 'Complete',
-}
+import QuickStatusUpdate from '@/components/QuickStatusUpdate'
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -100,11 +87,9 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
               <div key={job.id} className="bg-white rounded-xl border border-gray-200 p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <h3 className="font-semibold text-gray-900">{job.title}</h3>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[job.status]}`}>
-                        {statusLabels[job.status]}
-                      </span>
+                      <QuickStatusUpdate jobId={job.id} clientId={id} currentStatus={job.status} />
                     </div>
                     {job.estimate && (
                       <p className="text-green-700 font-medium mt-1">${job.estimate.toLocaleString()}</p>
@@ -117,7 +102,10 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                       </a>
                     )}
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-2 ml-4 flex-shrink-0">
+                    <Link href={`/clients/${id}/jobs/${job.id}/estimate`} className="text-sm border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50">
+                      📄 Estimate
+                    </Link>
                     <Link href={`/clients/${id}/jobs/${job.id}/edit`} className="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
                       Edit
                     </Link>

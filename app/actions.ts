@@ -75,3 +75,9 @@ export async function deleteJob(jobId: string, clientId: string) {
   revalidatePath(`/clients/${clientId}`)
   redirect(`/clients/${clientId}`)
 }
+
+export async function updateJobStatus(jobId: string, clientId: string, status: string) {
+  const { error } = await supabase.from('jobs').update({ status }).eq('id', jobId)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/clients/${clientId}`)
+}
