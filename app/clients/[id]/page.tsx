@@ -6,6 +6,7 @@ import FileUpload from '@/components/FileUpload'
 import FileList from '@/components/FileList'
 import QuickStatusUpdate from '@/components/QuickStatusUpdate'
 import FollowUpQuickSet from '@/components/FollowUpQuickSet'
+import NoteLogger from '@/components/NoteLogger'
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -67,7 +68,12 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                 📅 Follow up: {new Date(client.follow_up_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </p>
             )}
-            {client.notes && <p className="text-gray-500 mt-3 text-sm">{client.notes}</p>}
+            {client.notes && (
+              <p className="text-gray-500 mt-3 text-sm whitespace-pre-wrap leading-relaxed">{client.notes}</p>
+            )}
+            <div className="mt-3">
+              <NoteLogger clientId={id} />
+            </div>
             <div className="mt-3">
               <FollowUpQuickSet clientId={id} hasFollowUp={!!client.follow_up_date} />
             </div>
@@ -157,9 +163,12 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                       </a>
                     )}
                   </div>
-                  <div className="flex gap-2 ml-4 flex-shrink-0">
+                  <div className="flex gap-2 ml-4 flex-shrink-0 flex-wrap justify-end">
                     <Link href={`/clients/${id}/jobs/${job.id}/estimate`} className="text-sm border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50">
                       📄 Estimate
+                    </Link>
+                    <Link href={`/clients/${id}/jobs/${job.id}/invoice`} className="text-sm border border-green-300 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-50">
+                      📋 Invoice
                     </Link>
                     <Link href={`/clients/${id}/jobs/${job.id}/edit`} className="text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
                       Edit

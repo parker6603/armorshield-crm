@@ -1,9 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#1e293b',
+}
 
 export const metadata: Metadata = {
   title: "ArmorShield CRM",
   description: "Client management for ArmorShield Roofing & Construction",
+  appleWebApp: {
+    capable: true,
+    title: "ArmorShield CRM",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

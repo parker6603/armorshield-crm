@@ -95,7 +95,13 @@ export default async function AnalyticsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-        <span className="text-sm text-gray-400 hidden sm:block">ArmorShield Roofing & Construction</span>
+        <a
+          href="/api/export"
+          download
+          className="text-sm border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 flex items-center gap-1.5"
+        >
+          ⬇️ Export CSV
+        </a>
       </div>
 
       {/* Stat cards — 2 rows */}

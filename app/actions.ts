@@ -98,3 +98,14 @@ export async function clearFollowUp(clientId: string) {
   if (error) throw new Error(error.message)
   revalidatePath('/')
 }
+
+export async function appendNote(clientId: string, note: string) {
+  if (!note.trim()) return
+  const { data } = await supabase.from('clients').select('notes').eq('id', clientId).single()
+  const stamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const existing = data?.notes ?? ''
+  const updated = existing ? `${existing}\n\n[${stamp}] ${note.trim()}` : `[${stamp}] ${note.trim()}`
+  const { error } = await supabase.from('clients').update({ notes: updated }).eq('id', clientId)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/clients/${clientId}`)
+}

@@ -90,6 +90,10 @@ export default function EstimateEditor(props: Props) {
     setLineItems((prev) => prev.filter((_, idx) => idx !== i))
   }
 
+  function addTemplate(desc: string) {
+    setLineItems((prev) => [...prev, { description: desc, amount: '' }])
+  }
+
   const total = lineItems.reduce((sum, item) => {
     const n = parseFloat(item.amount.replace(/[^0-9.]/g, ''))
     return sum + (isNaN(n) ? 0 : n)
@@ -218,14 +222,36 @@ export default function EstimateEditor(props: Props) {
           </tfoot>
         </table>
 
-        {/* Add line button — hidden on print */}
-        <div className="mb-8 no-print">
+        {/* Add line + quick templates — hidden on print */}
+        <div className="flex flex-wrap items-center gap-3 mb-8 no-print">
           <button
             onClick={addLine}
             className="text-sm text-slate-600 border border-dashed border-slate-400 px-3 py-1.5 rounded-lg hover:bg-slate-50"
           >
-            + Add Line Item
+            + Add Line
           </button>
+          <select
+            defaultValue=""
+            onChange={e => {
+              const templates: Record<string, string> = {
+                'Full Roof Replacement': 'Complete tear-off and installation of new roofing system including underlayment, ice & water shield, flashing, and ridge cap. Debris removal included.',
+                'Roof Repair': 'Repair damaged/missing shingles, reseal flashing, and address leak areas. All labor and materials included.',
+                'Gutter Installation': 'Supply and install seamless K-style aluminum gutters and downspouts with hangers and end caps.',
+                'Gutter Cleaning': 'Clean and flush all gutters and downspouts. Bag and remove all debris from property.',
+                'Siding': 'Remove existing siding and install new vinyl siding with house wrap. Includes trim, corners, and cleanup.',
+                'Emergency Repair': 'Emergency response to prevent further water intrusion. Temporary and/or permanent repair as needed.',
+                'Inspection': 'Full roof inspection with photo documentation and written findings report.',
+              }
+              const desc = templates[e.target.value]
+              if (desc) { addTemplate(desc); e.target.value = '' }
+            }}
+            className="text-sm border border-dashed border-slate-400 text-slate-600 rounded-lg px-3 py-1.5 bg-white cursor-pointer hover:bg-slate-50 focus:outline-none"
+          >
+            <option value="" disabled>⚡ Quick add service…</option>
+            {Object.keys({ 'Full Roof Replacement': '', 'Roof Repair': '', 'Gutter Installation': '', 'Gutter Cleaning': '', 'Siding': '', 'Emergency Repair': '', 'Inspection': '' }).map(k => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
         </div>
 
         {/* Terms */}
