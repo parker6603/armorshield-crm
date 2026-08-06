@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getAllClientsWithJobs } from '@/lib/data'
 import SearchBar from '@/components/SearchBar'
 import StatusFilter from '@/components/StatusFilter'
 import SortControl from '@/components/SortControl'
@@ -46,31 +46,28 @@ export default async function Dashboard({
 }) {
   const { search, status, sort = 'newest' } = await searchParams
 
-  const { data: allClients } = await supabase
-    .from('clients')
-    .select('*, jobs(id, status, estimate)')
-    .order('created_at', { ascending: false })
+  const allClients = await getAllClientsWithJobs()
 
-  const allJobs = (allClients ?? []).flatMap(c => (c.jobs ?? []) as JobStat[])
+  const allJobs = allClients.flatMap(c => (c.jobs ?? []) as JobStat[])
 
   const stats = {
-    clients: allClients?.length ?? 0,
+    clients: allClients.length,
     active: allJobs.filter(j => j.status === 'in_progress').length,
     leads: allJobs.filter(j => j.status === 'lead').length,
     pipeline: allJobs
       .filter(j => j.status !== 'complete')
       .reduce((s, j) => s + (j.estimate ?? 0), 0),
-    followUps: (allClients ?? []).filter(
+    followUps: allClients.filter(
       c => isOverdue(c.follow_up_date) || isDueToday(c.follow_up_date)
     ).length,
   }
 
-  const followUps = (allClients ?? []).filter(
+  const followUps = allClients.filter(
     c => isOverdue(c.follow_up_date) || isDueToday(c.follow_up_date)
   )
 
   // Filter
-  let clients = allClients ?? []
+  let clients = allClients
   if (search) {
     const q = search.toLowerCase()
     clients = clients.filter(c =>

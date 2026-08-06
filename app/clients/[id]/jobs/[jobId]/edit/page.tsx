@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getJob } from '@/lib/data'
 import JobForm from './JobForm'
 
 export default async function EditJobPage({ params }: { params: Promise<{ id: string; jobId: string }> }) {
   const { id, jobId } = await params
-  const { data: job } = await supabase.from('jobs').select('*').eq('id', jobId).single()
+  const job = await getJob(jobId)
   if (!job) notFound()
 
   return <JobForm job={job} clientId={id} />

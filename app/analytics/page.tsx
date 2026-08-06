@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { getAnalyticsData } from '@/lib/data'
 
 const statusColors: Record<string, string> = {
   lead: 'bg-yellow-400',
@@ -16,32 +16,29 @@ const statusLabels: Record<string, string> = {
 }
 
 export default async function AnalyticsPage() {
-  const [{ data: clients }, { data: jobs }] = await Promise.all([
-    supabase.from('clients').select('id, name, follow_up_date, jobs(estimate, status)'),
-    supabase.from('jobs').select('*'),
-  ])
+  const { clients, jobs, today, months } = await getAnalyticsData()
 
-  const totalClients = clients?.length ?? 0
-  const totalJobs = jobs?.length ?? 0
+  const totalClients = clients.length
+  const totalJobs = jobs.length
 
   const byStatus = {
-    lead: jobs?.filter(j => j.status === 'lead') ?? [],
-    scheduled: jobs?.filter(j => j.status === 'scheduled') ?? [],
-    in_progress: jobs?.filter(j => j.status === 'in_progress') ?? [],
-    complete: jobs?.filter(j => j.status === 'complete') ?? [],
+    lead: jobs.filter(j => j.status === 'lead'),
+    scheduled: jobs.filter(j => j.status === 'scheduled'),
+    in_progress: jobs.filter(j => j.status === 'in_progress'),
+    complete: jobs.filter(j => j.status === 'complete'),
   }
 
   const pipeline = jobs
-    ?.filter(j => j.status !== 'complete')
-    .reduce((s, j) => s + (j.estimate ?? 0), 0) ?? 0
+    .filter(j => j.status !== 'complete')
+    .reduce((s, j) => s + (j.estimate ?? 0), 0)
 
   const won = jobs
-    ?.filter(j => j.status === 'complete')
-    .reduce((s, j) => s + (j.estimate ?? 0), 0) ?? 0
+    .filter(j => j.status === 'complete')
+    .reduce((s, j) => s + (j.estimate ?? 0), 0)
 
   const allRevenue = (pipeline + won)
 
-  const jobsWithEstimate = jobs?.filter(j => j.estimate != null) ?? []
+  const jobsWithEstimate = jobs.filter(j => j.estimate != null)
   const avgJobValue = jobsWithEstimate.length > 0
     ? Math.round(jobsWithEstimate.reduce((s, j) => s + (j.estimate ?? 0), 0) / jobsWithEstimate.length)
     : 0
@@ -51,19 +48,8 @@ export default async function AnalyticsPage() {
     : 0
 
   // Monthly revenue chart — last 6 months
-  const now = new Date()
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
-    return {
-      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-      label: d.toLocaleDateString('en-US', { month: 'short' }),
-      year: d.getFullYear(),
-      monthIndex: d.getMonth(),
-    }
-  })
-
   const monthlyData = months.map(m => {
-    const monthJobs = (jobs ?? []).filter(j => {
+    const monthJobs = jobs.filter(j => {
       const jDate = new Date(j.created_at)
       return jDate.getFullYear() === m.year && jDate.getMonth() === m.monthIndex
     })
@@ -76,7 +62,7 @@ export default async function AnalyticsPage() {
   const maxMonthly = Math.max(...monthlyData.map(m => m.estimate), 1)
 
   // Top clients
-  const topClients = (clients ?? [])
+  const topClients = clients
     .map(c => ({
       id: c.id,
       name: c.name,
@@ -88,8 +74,7 @@ export default async function AnalyticsPage() {
     .slice(0, 5)
   const maxClientTotal = topClients[0]?.total ?? 1
 
-  const today = new Date().toISOString().split('T')[0]
-  const overdueFollowUps = (clients ?? []).filter(c => c.follow_up_date && c.follow_up_date <= today)
+  const overdueFollowUps = clients.filter(c => c.follow_up_date && c.follow_up_date <= today)
 
   return (
     <div className="space-y-8">
@@ -258,7 +243,7 @@ export default async function AnalyticsPage() {
       {/* All jobs table */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">All Jobs</h2>
-        {!jobs?.length ? (
+        {!jobs.length ? (
           <p className="text-gray-400 text-sm">No jobs yet.</p>
         ) : (
           <div className="overflow-x-auto">

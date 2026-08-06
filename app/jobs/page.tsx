@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getAllJobs } from '@/lib/data'
 import QuickStatusUpdate from '@/components/QuickStatusUpdate'
 import StatusFilter from '@/components/StatusFilter'
 
@@ -25,23 +25,20 @@ export default async function JobsPage({
 }) {
   const { status } = await searchParams
 
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('*, clients(id, name, address)')
-    .order('created_at', { ascending: false })
+  const jobs = await getAllJobs()
 
   const counts = {
-    lead: jobs?.filter(j => j.status === 'lead').length ?? 0,
-    scheduled: jobs?.filter(j => j.status === 'scheduled').length ?? 0,
-    in_progress: jobs?.filter(j => j.status === 'in_progress').length ?? 0,
-    complete: jobs?.filter(j => j.status === 'complete').length ?? 0,
+    lead: jobs.filter(j => j.status === 'lead').length,
+    scheduled: jobs.filter(j => j.status === 'scheduled').length,
+    in_progress: jobs.filter(j => j.status === 'in_progress').length,
+    complete: jobs.filter(j => j.status === 'complete').length,
   }
 
   const pipeline = jobs
-    ?.filter(j => j.status !== 'complete')
-    .reduce((s, j) => s + (j.estimate ?? 0), 0) ?? 0
+    .filter(j => j.status !== 'complete')
+    .reduce((s, j) => s + (j.estimate ?? 0), 0)
 
-  const displayed = status ? jobs?.filter(j => j.status === status) : jobs
+  const displayed = status ? jobs.filter(j => j.status === status) : jobs
 
   return (
     <div className="space-y-5">

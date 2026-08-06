@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getClient, getClientJobs, getClientFiles } from '@/lib/data'
 import { deleteClient, deleteJob } from '@/app/actions'
 import FileUpload from '@/components/FileUpload'
 import FileList from '@/components/FileList'
@@ -11,34 +11,26 @@ import NoteLogger from '@/components/NoteLogger'
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const { data: client } = await supabase.from('clients').select('*').eq('id', id).single()
+  const [client, jobs, allFiles] = await Promise.all([
+    getClient(id),
+    getClientJobs(id),
+    getClientFiles(id),
+  ])
   if (!client) notFound()
 
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('*')
-    .eq('client_id', id)
-    .order('created_at', { ascending: false })
-
-  const { data: allFiles } = await supabase
-    .from('files')
-    .select('*')
-    .eq('client_id', id)
-    .order('created_at', { ascending: false })
-
-  const clientFiles = allFiles?.filter((f) => !f.job_id) ?? []
-  const filesByJob = (jobId: string) => allFiles?.filter((f) => f.job_id === jobId) ?? []
+  const clientFiles = allFiles.filter((f) => !f.job_id)
+  const filesByJob = (jobId: string) => allFiles.filter((f) => f.job_id === jobId)
 
   const deleteClientWithId = deleteClient.bind(null, id)
 
   // Stats
-  const totalEstimate = jobs?.reduce((s, j) => s + (j.estimate ?? 0), 0) ?? 0
-  const activeCount = jobs?.filter(j => j.status !== 'complete').length ?? 0
-  const completeCount = jobs?.filter(j => j.status === 'complete').length ?? 0
+  const totalEstimate = jobs.reduce((s, j) => s + (j.estimate ?? 0), 0)
+  const activeCount = jobs.filter(j => j.status !== 'complete').length
+  const completeCount = jobs.filter(j => j.status === 'complete').length
 
   // Sort jobs: active first, complete last
   const statusPriority: Record<string, number> = { in_progress: 0, scheduled: 1, lead: 2, complete: 3 }
-  const sortedJobs = [...(jobs ?? [])].sort(
+  const sortedJobs = [...jobs].sort(
     (a, b) => (statusPriority[a.status] ?? 4) - (statusPriority[b.status] ?? 4)
   )
 
@@ -90,10 +82,10 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
 
-        {(jobs?.length ?? 0) > 0 && (
+        {jobs.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex gap-5 flex-wrap">
             <div>
-              <p className="text-2xl font-bold text-slate-700 tabular-nums">{jobs?.length}</p>
+              <p className="text-2xl font-bold text-slate-700 tabular-nums">{jobs.length}</p>
               <p className="text-xs text-gray-400 mt-0.5">Total Jobs</p>
             </div>
             {totalEstimate > 0 && (

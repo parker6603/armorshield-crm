@@ -1,13 +1,13 @@
 import { notFound } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getClient, getJob } from '@/lib/data'
 import EstimateEditor from './EstimateEditor'
 
 export default async function EstimatePage({ params }: { params: Promise<{ id: string; jobId: string }> }) {
   const { id, jobId } = await params
 
-  const [{ data: client }, { data: job }] = await Promise.all([
-    supabase.from('clients').select('*').eq('id', id).single(),
-    supabase.from('jobs').select('*').eq('id', jobId).single(),
+  const [client, job] = await Promise.all([
+    getClient(id),
+    getJob(jobId),
   ])
 
   if (!client || !job) notFound()

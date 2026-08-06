@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -36,7 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </nav>
 
         {/* Page content — extra bottom padding on mobile for the bottom nav */}
-        <main className="max-w-4xl mx-auto px-4 py-6 pb-28 md:pb-8">{children}</main>
+        <main className="max-w-4xl mx-auto px-4 py-6 pb-28 md:pb-8">
+          <Suspense>{children}</Suspense>
+        </main>
 
         {/* Mobile bottom nav */}
         <nav
