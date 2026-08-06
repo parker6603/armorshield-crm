@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { uploadFile } from '@/app/actions'
 
 export default function FileUpload({ clientId, jobId }: { clientId: string; jobId?: string }) {
   const [uploading, setUploading] = useState(false)
@@ -17,34 +17,15 @@ export default function FileUpload({ clientId, jobId }: { clientId: string; jobI
     setUploading(true)
     setError(null)
 
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const path = jobId
-      ? `${clientId}/${jobId}/${Date.now()}-${safeName}`
-      : `${clientId}/${Date.now()}-${safeName}`
+    const formData = new FormData()
+    formData.append('file', file)
 
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(path, file)
-
-    if (uploadError) {
-      setError(uploadError.message)
-      setUploading(false)
-      return
-    }
-
-    const { error: dbError } = await supabase.from('files').insert({
-      client_id: clientId,
-      job_id: jobId ?? null,
-      name: file.name,
-      path,
-      size: file.size,
-    })
-
-    if (dbError) {
-      setError(dbError.message)
-    } else {
+    try {
+      await uploadFile(clientId, jobId ?? null, formData)
       if (fileRef.current) fileRef.current.value = ''
       router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
     }
 
     setUploading(false)

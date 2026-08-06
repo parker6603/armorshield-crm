@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { deleteFile } from '@/app/actions'
 
 type File = {
   id: string
@@ -19,15 +20,14 @@ function formatSize(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export default function FileList({ files }: { files: File[] }) {
+export default function FileList({ clientId, files }: { clientId: string; files: File[] }) {
   const [deleting, setDeleting] = useState<string | null>(null)
   const router = useRouter()
 
   async function handleDelete(file: File) {
     if (!confirm(`Delete "${file.name}"?`)) return
     setDeleting(file.id)
-    await supabase.storage.from('documents').remove([file.path])
-    await supabase.from('files').delete().eq('id', file.id)
+    await deleteFile(clientId, file.id, file.path)
     setDeleting(null)
     router.refresh()
   }

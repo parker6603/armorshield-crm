@@ -123,3 +123,34 @@ export async function appendNote(clientId: string, note: string) {
   revalidateTag(`client-${clientId}`, 'max')
   revalidatePath(`/clients/${clientId}`)
 }
+
+export async function uploadFile(clientId: string, jobId: string | null, formData: FormData) {
+  const file = formData.get('file') as File
+  if (!file || file.size === 0) throw new Error('No file provided')
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const path = jobId
+    ? `${clientId}/${jobId}/${Date.now()}-${safeName}`
+    : `${clientId}/${Date.now()}-${safeName}`
+
+  const { error: uploadError } = await supabase.storage.from('documents').upload(path, file)
+  if (uploadError) throw new Error(uploadError.message)
+
+  const { error: dbError } = await supabase.from('files').insert({
+    client_id: clientId,
+    job_id: jobId,
+    name: file.name,
+    path,
+    size: file.size,
+  })
+  if (dbError) throw new Error(dbError.message)
+
+  revalidateTag(`client-files-${clientId}`, 'max')
+}
+
+export async function deleteFile(clientId: string, fileId: string, path: string) {
+  await supabase.storage.from('documents').remove([path])
+  const { error } = await supabase.from('files').delete().eq('id', fileId)
+  if (error) throw new Error(error.message)
+  revalidateTag(`client-files-${clientId}`, 'max')
+}

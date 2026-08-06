@@ -111,7 +111,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
 
         <div className="mt-4 pt-4 border-t border-gray-100">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Client Documents</p>
-          <FileList files={clientFiles} />
+          <FileList clientId={id} files={clientFiles} />
           <div className="mt-2">
             <FileUpload clientId={id} />
           </div>
@@ -173,7 +173,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  <FileList files={filesByJob(job.id)} />
+                  <FileList clientId={id} files={filesByJob(job.id)} />
                   <div className="mt-2">
                     <FileUpload clientId={id} jobId={job.id} />
                   </div>
